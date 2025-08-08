@@ -15,7 +15,19 @@ on:
         description: MQ sample user password
         required: false
         default: appPassw0rd!
+      ZIP_SOURCE:
+        description: Full path to mqredist.zip on the runner
+        required: false
+        default: C:\_thirdparty\ibm\mq\9.2\mqredist.zip
   push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'scripts/**'
+      - '.github/workflows/build.yml'
+      - 'README.md'
+  pull_request:
     branches: [ main ]
     paths:
       - 'Dockerfile'
@@ -37,51 +49,42 @@ jobs:
       MQSERVER: ${{ github.event.inputs.MQSERVER || 'DEV.APP.SVRCONN/TCP/host.docker.internal(1414)' }}
       MQSAMP_USER_ID: ${{ github.event.inputs.MQSAMP_USER_ID || 'app' }}
       MQSAMP_USER_PWD: ${{ github.event.inputs.MQSAMP_USER_PWD || 'appPassw0rd!' }}
+      ZIP_SOURCE: ${{ github.event.inputs.ZIP_SOURCE || 'C:\_thirdparty\ibm\mq\9.2\mqredist.zip' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure Docker is in Windows-containers mode
-        shell: powershell
-        run: ./scripts/ensure-windows-containers.ps1
+      # - name: Ensure Docker is in Windows-containers mode
+      #   shell: cmd
+      #   run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\ensure-windows-containers.ps1
 
       - name: Stage IBM MQ redist ZIP
-        shell: powershell
-        run: ./scripts/stage-mqredist.ps1
-        # To override source path: ./scripts/stage-mqredist.ps1 -SourceZip "D:\path\mqredist.zip"
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stage-mqredist.ps1 -SourceZip "${{ env.ZIP_SOURCE }}"
+        # To override source path at dispatch: set ZIP_SOURCE input (e.g., D:\path\mqredist.zip)
 
       - name: Docker build
-        shell: powershell
+        shell: cmd
         run: docker build --no-cache -t mq-client-win:ltsc2016 .
 
       - name: Preflight MQ server reachability (non-blocking)
-        shell: powershell
-        run: |
-          Write-Host "Running preflight connectivity check for MQSERVER='${{ env.MQSERVER }}' ..."
-          ./scripts/preflight-check.ps1 -MqServerEnv "${{ env.MQSERVER }}"
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host 'Running preflight connectivity check for MQSERVER=''${{ env.MQSERVER }}'' ...'; .\scripts\preflight-check.ps1 -MqServerEnv \"${{ env.MQSERVER }}\""
         continue-on-error: true
 
       - name: Docker Compose up (detached)
-        shell: powershell
+        shell: cmd
         run: docker compose up -d
 
       - name: Smoke test inside container
-        shell: powershell
-        run: |
-          docker exec mqclient powershell -Command `
-            "\$env:MQSERVER='${{ env.MQSERVER }}'; `
-              \$env:MQSAMP_USER_ID='${{ env.MQSAMP_USER_ID }}'; `
-              \$env:MQSAMP_USER_PWD='${{ env.MQSAMP_USER_PWD }}'; `
-              C:\scripts\smoke-test.ps1"
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -Command "docker exec -e MQSERVER='${{ env.MQSERVER }}' -e MQSAMP_USER_ID='${{ env.MQSAMP_USER_ID }}' -e MQSAMP_USER_PWD='${{ env.MQSAMP_USER_PWD }}' mqclient powershell -NoProfile -ExecutionPolicy Bypass -File C:\scripts\smoke-test.ps1"
 
       - name: Gather logs on failure
         if: failure()
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Force -Path logs | Out-Null
-          docker logs mqclient *> logs\mqclient.log
-          docker compose ps -a *> logs\compose-ps.log
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force -Path logs | Out-Null; docker logs mqclient *>&1 | Out-File -FilePath logs\mqclient.log -Encoding utf8; docker compose ps -a *>&1 | Out-File -FilePath logs\compose-ps.log -Encoding utf8"
         continue-on-error: true
 
       - name: Upload logs artifact
@@ -93,5 +96,5 @@ jobs:
 
       - name: Compose down
         if: always()
-        shell: powershell
+        shell: cmd
         run: docker compose down --remove-orphans
