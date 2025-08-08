@@ -23,6 +23,14 @@ on:
       - 'scripts/**'
       - '.github/workflows/build.yml'
       - 'README.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'scripts/**'
+      - '.github/workflows/build.yml'
+      - 'README.md'
 
 concurrency:
   group: windows-mqclient-${{ github.ref }}
