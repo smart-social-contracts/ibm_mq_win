@@ -26,3 +26,8 @@ if ($LASTEXITCODE -ne 0) {
   Write-Error "Docker Desktop Windows engine not ready. Ensure Docker Desktop is running and switched to Windows containers, then rerun."
   exit 1
 }
+$info2 = docker info 2>$null
+if ($LASTEXITCODE -ne 0 -or ($info2 -notmatch "OSType:\s+windows")) {
+  Write-Error "Docker is not in Windows containers mode (OSType != windows). Open Docker Desktop and Switch to Windows containers."
+  exit 1
+}

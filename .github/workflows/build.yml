@@ -15,6 +15,10 @@ on:
         description: MQ sample user password
         required: false
         default: appPassw0rd!
+      ZIP_SOURCE:
+        description: Full path to mqredist.zip on the runner
+        required: false
+        default: C:\_thirdparty\ibm\mq\9.2\mqredist.zip
   push:
     branches: [ main ]
     paths:
@@ -45,6 +49,7 @@ jobs:
       MQSERVER: ${{ github.event.inputs.MQSERVER || 'DEV.APP.SVRCONN/TCP/host.docker.internal(1414)' }}
       MQSAMP_USER_ID: ${{ github.event.inputs.MQSAMP_USER_ID || 'app' }}
       MQSAMP_USER_PWD: ${{ github.event.inputs.MQSAMP_USER_PWD || 'appPassw0rd!' }}
+      ZIP_SOURCE: ${{ github.event.inputs.ZIP_SOURCE || 'C:\_thirdparty\ibm\mq\9.2\mqredist.zip' }}
 
     steps:
       - name: Checkout
@@ -56,8 +61,8 @@ jobs:
 
       - name: Stage IBM MQ redist ZIP
         shell: cmd
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stage-mqredist.ps1
-        # To override source path: .\scripts\stage-mqredist.ps1 -SourceZip "D:\path\mqredist.zip"
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stage-mqredist.ps1 -SourceZip "${{ env.ZIP_SOURCE }}"
+        # To override source path at dispatch: set ZIP_SOURCE input (e.g., D:\path\mqredist.zip)
 
       - name: Docker build
         shell: cmd
