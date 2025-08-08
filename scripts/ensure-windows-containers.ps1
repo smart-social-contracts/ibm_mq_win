@@ -12,6 +12,17 @@ do {
   Start-Sleep -Seconds 5
   $retry++
 } while ($retry -lt $max)
-if ($LASTEXITCODE -ne 0) { & $cli -SwitchWindowsEngine; Start-Sleep -Seconds 15 }
-elseif ($info -match "OSType:\s+linux") { & $cli -SwitchWindowsEngine; Start-Sleep -Seconds 15 }
-docker version
+if ($LASTEXITCODE -ne 0) { & $cli -SwitchWindowsEngine; $switched = $true; Start-Sleep -Seconds 15 }
+elseif ($info -match "OSType:\s+linux") { & $cli -SwitchWindowsEngine; $switched = $true; Start-Sleep -Seconds 15 }
+$tries = 0
+$maxTries = 12
+do {
+  docker version
+  if ($LASTEXITCODE -eq 0) { break }
+  Start-Sleep -Seconds 5
+  $tries++
+} while ($tries -lt $maxTries)
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "Docker Desktop Windows engine not ready. Ensure Docker Desktop is running and switched to Windows containers, then rerun."
+  exit 1
+}
