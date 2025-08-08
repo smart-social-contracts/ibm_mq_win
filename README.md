@@ -93,7 +93,12 @@ Compose notes
 
 Optional safeguards
 - .env.example provided
-- You can add a preflight network check before smoke tests as needed
+- Preflight network check script:
+  - powershell -File .\scripts\preflight-check.ps1 -MqServerEnv "$Env:MQSERVER"
+  - Non-blocking: warns clearly if the MQ host:port is unreachable from the runner.
+- Debug compose profile:
+  - docker compose --profile debug up -d mqclient-debug
+  - This starts a container with command: cmd /k for interactive troubleshooting.
 
 Troubleshooting
 - If amqs* tools are not found, verify C:\ibmmq\bin64 and C:\ibmmq\bin are on PATH

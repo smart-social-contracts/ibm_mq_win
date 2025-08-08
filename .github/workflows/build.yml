@@ -55,6 +55,13 @@ jobs:
         shell: powershell
         run: docker build --no-cache -t mq-client-win:ltsc2016 .
 
+      - name: Preflight MQ server reachability (non-blocking)
+        shell: powershell
+        run: |
+          Write-Host "Running preflight connectivity check for MQSERVER='${{ env.MQSERVER }}' ..."
+          ./scripts/preflight-check.ps1 -MqServerEnv "${{ env.MQSERVER }}"
+        continue-on-error: true
+
       - name: Docker Compose up (detached)
         shell: powershell
         run: docker compose up -d

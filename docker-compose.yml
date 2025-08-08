@@ -12,3 +12,18 @@ services:
       MQSERVER: ${MQSERVER:-DEV.APP.SVRCONN/TCP/host.docker.internal(1414)}
       MQSAMP_USER_ID: ${MQSAMP_USER_ID:-app}
       MQSAMP_USER_PWD: ${MQSAMP_USER_PWD:-appPassw0rd!}
+
+  mqclient-debug:
+    build: .
+    image: mq-client-win:ltsc2016
+    container_name: mqclient-debug
+    stdin_open: true
+    tty: true
+    isolation: hyperv
+    command: ["cmd", "/k"]
+    environment:
+      MQSERVER: ${MQSERVER:-DEV.APP.SVRCONN/TCP/host.docker.internal(1414)}
+      MQSAMP_USER_ID: ${MQSAMP_USER_ID:-app}
+      MQSAMP_USER_PWD: ${MQSAMP_USER_PWD:-appPassw0rd!}
+    profiles:
+      - debug
