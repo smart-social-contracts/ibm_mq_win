@@ -55,9 +55,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure Docker is in Windows-containers mode
-        shell: cmd
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\ensure-windows-containers.ps1
+      # - name: Ensure Docker is in Windows-containers mode
+      #   shell: cmd
+      #   run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\ensure-windows-containers.ps1
 
       - name: Stage IBM MQ redist ZIP
         shell: cmd
