@@ -1,0 +1,90 @@
+name: Build Windows MQ Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      MQSERVER:
+        description: MQSERVER connection string
+        required: false
+        default: DEV.APP.SVRCONN/TCP/host.docker.internal(1414)
+      MQSAMP_USER_ID:
+        description: MQ sample user id
+        required: false
+        default: app
+      MQSAMP_USER_PWD:
+        description: MQ sample user password
+        required: false
+        default: appPassw0rd!
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'scripts/**'
+      - '.github/workflows/build.yml'
+      - 'README.md'
+
+concurrency:
+  group: windows-mqclient-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-test:
+    runs-on: [self-hosted, windows, windows-containers, ltsc2016]
+    timeout-minutes: 45
+
+    env:
+      MQSERVER: ${{ github.event.inputs.MQSERVER || 'DEV.APP.SVRCONN/TCP/host.docker.internal(1414)' }}
+      MQSAMP_USER_ID: ${{ github.event.inputs.MQSAMP_USER_ID || 'app' }}
+      MQSAMP_USER_PWD: ${{ github.event.inputs.MQSAMP_USER_PWD || 'appPassw0rd!' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure Docker is in Windows-containers mode
+        shell: powershell
+        run: ./scripts/ensure-windows-containers.ps1
+
+      - name: Stage IBM MQ redist ZIP
+        shell: powershell
+        run: ./scripts/stage-mqredist.ps1
+        # To override source path: ./scripts/stage-mqredist.ps1 -SourceZip "D:\path\mqredist.zip"
+
+      - name: Docker build
+        shell: powershell
+        run: docker build --no-cache -t mq-client-win:ltsc2016 .
+
+      - name: Docker Compose up (detached)
+        shell: powershell
+        run: docker compose up -d
+
+      - name: Smoke test inside container
+        shell: powershell
+        run: |
+          docker exec mqclient powershell -Command `
+            "\$env:MQSERVER='${{ env.MQSERVER }}'; `
+              \$env:MQSAMP_USER_ID='${{ env.MQSAMP_USER_ID }}'; `
+              \$env:MQSAMP_USER_PWD='${{ env.MQSAMP_USER_PWD }}'; `
+              C:\scripts\smoke-test.ps1"
+
+      - name: Gather logs on failure
+        if: failure()
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path logs | Out-Null
+          docker logs mqclient *> logs\mqclient.log
+          docker compose ps -a *> logs\compose-ps.log
+        continue-on-error: true
+
+      - name: Upload logs artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mqclient-logs
+          path: logs
+
+      - name: Compose down
+        if: always()
+        shell: powershell
+        run: docker compose down --remove-orphans
