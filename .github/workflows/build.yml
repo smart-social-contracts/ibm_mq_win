@@ -79,7 +79,7 @@ jobs:
 
       - name: Smoke test inside container
         shell: cmd
-        run: powershell -NoProfile -ExecutionPolicy Bypass -Command "docker exec mqclient powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:MQSERVER='${{ env.MQSERVER }}'; $env:MQSAMP_USER_ID='${{ env.MQSAMP_USER_ID }}'; $env:MQSAMP_USER_PWD='${{ env.MQSAMP_USER_PWD }}'; C:\scripts\smoke-test.ps1\""
+        run: powershell -NoProfile -ExecutionPolicy Bypass -Command "docker exec -e MQSERVER='${{ env.MQSERVER }}' -e MQSAMP_USER_ID='${{ env.MQSAMP_USER_ID }}' -e MQSAMP_USER_PWD='${{ env.MQSAMP_USER_PWD }}' mqclient powershell -NoProfile -ExecutionPolicy Bypass -File C:\scripts\smoke-test.ps1"
 
       - name: Gather logs on failure
         if: failure()
