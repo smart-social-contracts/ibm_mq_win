@@ -110,3 +110,21 @@ CI notes: staging mqredist.zip
   C:\_thirdparty\ibm\mq\9.2\mqredist.zip
 - When manually triggering via workflow_dispatch, you can override this location using the ZIP_SOURCE input (e.g., D:\software\mq\mqredist.zip).
 - The staging step copies the ZIP into the repository root so the Docker build can COPY it into the image.
+
+
+# Development
+
+Background: https://chatgpt.com/c/6895efce-2fd0-8332-8df3-448c617386d6
+
+Reverse proxy machine: `ubuntu-s-1vcpu-512mb-10gb-fra1-01 / 512 MB Memory / 10 GB Disk / FRA1 - Ubuntu 25.04 x64`
+
+You can connect your VSCode to windows-runner and then open a terminal:
+```
+
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\Users\PC> docker run --rm -it mq-client-win:ltsc2016 cmd
+
+...
+```
