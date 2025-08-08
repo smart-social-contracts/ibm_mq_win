@@ -27,7 +27,7 @@ if ($LASTEXITCODE -ne 0) {
   exit 1
 }
 $info2 = docker info 2>$null
-if ($LASTEXITCODE -ne 0 -or ($info2 -notmatch "OSType:\s+windows")) {
-  Write-Error "Docker is not in Windows containers mode (OSType != windows). Open Docker Desktop and Switch to Windows containers."
+if ($LASTEXITCODE -ne 0 -or ($info2 -notmatch "OS/Arch:\s+windows/amd64")) {
+  Write-Error "Docker is not in Windows containers mode (OS/Arch != windows/amd64). Open Docker Desktop and Switch to Windows containers."
   exit 1
 }
